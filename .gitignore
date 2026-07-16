@@ -1,0 +1,28 @@
+# Maven build files
+target/
+
+# Java compiled files
+*.class
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+*.pem
+*.key
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+
+src/main/resources/application.properties
