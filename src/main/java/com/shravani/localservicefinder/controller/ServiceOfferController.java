@@ -21,32 +21,42 @@ public class ServiceOfferController {
     }
 
     @PostMapping
-    public ResponseEntity<ServiceOfferResponse> createServiceOffer(@Valid @RequestBody ServiceOfferRequest request) {
+    public ResponseEntity<ServiceOfferResponse> createServiceOffer(
+            @Valid @RequestBody ServiceOfferRequest request) {
+
         ServiceOfferResponse savedOffer = serviceOfferService.createServiceOffer(request);
         return new ResponseEntity<>(savedOffer, HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<ServiceOfferResponse>> getAllOffers() {
-        List<ServiceOfferResponse> offers = serviceOfferService.getAllOffers();
-        return ResponseEntity.ok(offers);
+    public ResponseEntity<List<ServiceOfferResponse>> getAllServiceOffers() {
+        List<ServiceOfferResponse> serviceOffers = serviceOfferService.getAllServiceOffers();
+        return ResponseEntity.ok(serviceOffers);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ServiceOfferResponse> getOfferById(@PathVariable Long id) {
-        ServiceOfferResponse offer = serviceOfferService.getOfferById(id);
-        return ResponseEntity.ok(offer);
+    public ResponseEntity<ServiceOfferResponse> getServiceOfferById(@PathVariable Long id) {
+        ServiceOfferResponse serviceOffer = serviceOfferService.getServiceOfferById(id);
+        return ResponseEntity.ok(serviceOffer);
     }
 
     @GetMapping("/request/{serviceRequestId}")
-    public ResponseEntity<List<ServiceOfferResponse>> getOffersByServiceRequest(@PathVariable Long serviceRequestId) {
-        List<ServiceOfferResponse> offers = serviceOfferService.getOffersByServiceRequest(serviceRequestId);
-        return ResponseEntity.ok(offers);
+    public ResponseEntity<List<ServiceOfferResponse>> getServiceOffersByServiceRequest(
+            @PathVariable Long serviceRequestId) {
+
+        List<ServiceOfferResponse> serviceOffers =
+                serviceOfferService.getServiceOffersByServiceRequest(serviceRequestId);
+
+        return ResponseEntity.ok(serviceOffers);
     }
 
     @GetMapping("/provider/{providerId}")
-    public ResponseEntity<List<ServiceOfferResponse>> getOffersByProvider(@PathVariable Long providerId) {
-        List<ServiceOfferResponse> offers = serviceOfferService.getOffersByProvider(providerId);
-        return ResponseEntity.ok(offers);
+    public ResponseEntity<List<ServiceOfferResponse>> getServiceOffersByProvider(
+            @PathVariable Long providerId) {
+
+        List<ServiceOfferResponse> serviceOffers =
+                serviceOfferService.getServiceOffersByProvider(providerId);
+
+        return ResponseEntity.ok(serviceOffers);
     }
 }
