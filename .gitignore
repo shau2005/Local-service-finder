@@ -12,6 +12,9 @@ target/
 *.pem
 *.key
 
+# Local application config
+src/main/resources/application.properties
+
 # IDE files
 .vscode/
 .idea/
@@ -24,5 +27,3 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.swp
-
-src/main/resources/application.properties
