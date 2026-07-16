@@ -1,6 +1,7 @@
 package com.shravani.localservicefinder.repository;
 
 import com.shravani.localservicefinder.entity.Booking;
+import com.shravani.localservicefinder.entity.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -14,4 +15,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     boolean existsByServiceRequestId(Long serviceRequestId);
 
     boolean existsByServiceOfferId(Long serviceOfferId);
+
+    long countByStatus(BookingStatus status);
 }

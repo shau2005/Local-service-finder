@@ -15,4 +15,6 @@ public interface ProviderProfileRepository extends JpaRepository<ProviderProfile
     List<ProviderProfile> findByCategoryId(Long categoryId);
 
     List<ProviderProfile> findByCityIgnoreCase(String city);
+
+    long countByVerified(Boolean verified);
 }

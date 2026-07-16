@@ -19,4 +19,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             String city,
             ServiceRequestStatus status
     );
+
+    long countByStatus(ServiceRequestStatus status);
 }
