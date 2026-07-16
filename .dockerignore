@@ -1,0 +1,10 @@
+target/
+.git/
+.vscode/
+.idea/
+*.iml
+*.log
+.env
+*.pem
+*.key
+src/main/resources/application.properties
