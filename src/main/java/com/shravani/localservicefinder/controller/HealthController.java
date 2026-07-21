@@ -1,0 +1,13 @@
+package com.shravani.localservicefinder.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HealthController {
+
+    @GetMapping("/api/health")
+    public String healthCheck() {
+        return "Local Service Finder backend is running - CI/CD test successful";
+    }
+}
