@@ -40,5 +40,15 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build: ./frontend
+    image: local-service-finder-frontend
+    container_name: local-service-finder-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
 volumes:
   mysql_data:
