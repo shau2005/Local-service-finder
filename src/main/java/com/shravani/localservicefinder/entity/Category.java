@@ -1,6 +1,11 @@
 package com.shravani.localservicefinder.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "service_categories")
@@ -10,11 +15,12 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(length = 500)
     private String description;
+
+    private boolean active = true;
 
     public Category() {
     }
@@ -22,6 +28,7 @@ public class Category {
     public Category(String name, String description) {
         this.name = name;
         this.description = description;
+        this.active = true;
     }
 
     public Long getId() {
@@ -36,6 +43,10 @@ public class Category {
         return description;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -46,5 +57,9 @@ public class Category {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

@@ -33,6 +33,9 @@ public class CategoryService {
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
+    public List<Category> getActiveCategories() {
+    return categoryRepository.findByActiveTrue();
+}
 
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id)
