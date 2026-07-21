@@ -22,42 +22,46 @@ public class ProviderProfileService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
-    public ProviderProfileService(ProviderProfileRepository providerProfileRepository,
-                                  UserRepository userRepository,
-                                  CategoryRepository categoryRepository) {
+    public ProviderProfileService(
+            ProviderProfileRepository providerProfileRepository,
+            UserRepository userRepository,
+            CategoryRepository categoryRepository) {
+
         this.providerProfileRepository = providerProfileRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
     }
 
     public ProviderProfileResponse createProviderProfile(ProviderProfileRequest request) {
-
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
 
         if (user.getRole() != UserRole.PROVIDER) {
-            throw new IllegalArgumentException("Only PROVIDER users can create provider profile");
+            throw new RuntimeException("Only PROVIDER users can create provider profile");
         }
 
         if (providerProfileRepository.existsByUserId(request.getUserId())) {
-            throw new IllegalArgumentException("Provider profile already exists for this user");
+            throw new RuntimeException("Provider profile already exists for user id: " + request.getUserId());
         }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
 
-        ProviderProfile providerProfile = new ProviderProfile();
-        providerProfile.setUser(user);
-        providerProfile.setCategory(category);
-        providerProfile.setExperienceYears(request.getExperienceYears());
-        providerProfile.setBaseArea(request.getBaseArea());
-        providerProfile.setCity(request.getCity());
-        providerProfile.setPincode(request.getPincode());
-        providerProfile.setServiceRadiusKm(request.getServiceRadiusKm());
-        providerProfile.setVerified(false);
+        if (!category.isActive()) {
+            throw new RuntimeException("Cannot create provider profile for inactive category: " + category.getName());
+        }
 
-        ProviderProfile savedProfile = providerProfileRepository.save(providerProfile);
+        ProviderProfile profile = new ProviderProfile();
+        profile.setUser(user);
+        profile.setCategory(category);
+        profile.setExperienceYears(request.getExperienceYears());
+        profile.setBaseArea(request.getBaseArea());
+        profile.setCity(request.getCity());
+        profile.setPincode(request.getPincode());
+        profile.setServiceRadiusKm(request.getServiceRadiusKm());
+        profile.setVerified(false);
 
+        ProviderProfile savedProfile = providerProfileRepository.save(profile);
         return convertToResponse(savedProfile);
     }
 
@@ -69,18 +73,13 @@ public class ProviderProfileService {
     }
 
     public ProviderProfileResponse getProviderProfileById(Long id) {
-        ProviderProfile providerProfile = providerProfileRepository.findById(id)
+        ProviderProfile profile = providerProfileRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found with id: " + id));
 
-        return convertToResponse(providerProfile);
+        return convertToResponse(profile);
     }
 
     public List<ProviderProfileResponse> getProviderProfilesByCategory(Long categoryId) {
-
-        if (!categoryRepository.existsById(categoryId)) {
-            throw new ResourceNotFoundException("Category not found with id: " + categoryId);
-        }
-
         return providerProfileRepository.findByCategoryId(categoryId)
                 .stream()
                 .map(this::convertToResponse)
@@ -95,38 +94,38 @@ public class ProviderProfileService {
     }
 
     public ProviderProfileResponse verifyProviderProfile(Long profileId, ProviderVerificationRequest request) {
-
         User admin = userRepository.findById(request.getAdminId())
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + request.getAdminId()));
 
         if (admin.getRole() != UserRole.ADMIN) {
-            throw new IllegalArgumentException("Only ADMIN can verify provider profile");
+            throw new RuntimeException("Only ADMIN can verify provider profiles");
         }
 
-        ProviderProfile providerProfile = providerProfileRepository.findById(profileId)
+        ProviderProfile profile = providerProfileRepository.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found with id: " + profileId));
 
-        providerProfile.setVerified(request.getVerified());
+        profile.setVerified(request.getVerified());
 
-        ProviderProfile updatedProfile = providerProfileRepository.save(providerProfile);
-
-        return convertToResponse(updatedProfile);
+        ProviderProfile savedProfile = providerProfileRepository.save(profile);
+        return convertToResponse(savedProfile);
     }
 
-    private ProviderProfileResponse convertToResponse(ProviderProfile providerProfile) {
-        return new ProviderProfileResponse(
-                providerProfile.getId(),
-                providerProfile.getUser().getId(),
-                providerProfile.getUser().getName(),
-                providerProfile.getCategory().getId(),
-                providerProfile.getCategory().getName(),
-                providerProfile.getExperienceYears(),
-                providerProfile.getBaseArea(),
-                providerProfile.getCity(),
-                providerProfile.getPincode(),
-                providerProfile.getServiceRadiusKm(),
-                providerProfile.getVerified(),
-                providerProfile.getCreatedAt()
-        );
+    private ProviderProfileResponse convertToResponse(ProviderProfile profile) {
+        ProviderProfileResponse response = new ProviderProfileResponse();
+
+        response.setId(profile.getId());
+        response.setUserId(profile.getUser().getId());
+        response.setProviderName(profile.getUser().getName());
+        response.setCategoryId(profile.getCategory().getId());
+        response.setCategoryName(profile.getCategory().getName());
+        response.setExperienceYears(profile.getExperienceYears());
+        response.setBaseArea(profile.getBaseArea());
+        response.setCity(profile.getCity());
+        response.setPincode(profile.getPincode());
+        response.setServiceRadiusKm(profile.getServiceRadiusKm());
+        response.setVerified(profile.getVerified());
+        response.setCreatedAt(profile.getCreatedAt());
+
+        return response;
     }
 }

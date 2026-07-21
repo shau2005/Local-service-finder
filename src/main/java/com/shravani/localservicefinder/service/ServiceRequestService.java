@@ -22,25 +22,30 @@ public class ServiceRequestService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
 
-    public ServiceRequestService(ServiceRequestRepository serviceRequestRepository,
-                                 UserRepository userRepository,
-                                 CategoryRepository categoryRepository) {
+    public ServiceRequestService(
+            ServiceRequestRepository serviceRequestRepository,
+            UserRepository userRepository,
+            CategoryRepository categoryRepository) {
+
         this.serviceRequestRepository = serviceRequestRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
     }
 
     public ServiceRequestResponse createServiceRequest(ServiceRequestRequest request) {
-
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
 
         if (user.getRole() != UserRole.USER) {
-            throw new IllegalArgumentException("Only users with USER role can create service request");
+            throw new RuntimeException("Only USER can create service request");
         }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + request.getCategoryId()));
+
+        if (!category.isActive()) {
+            throw new RuntimeException("Cannot create service request for inactive category: " + category.getName());
+        }
 
         ServiceRequest serviceRequest = new ServiceRequest();
         serviceRequest.setUser(user);
@@ -57,7 +62,6 @@ public class ServiceRequestService {
         serviceRequest.setStatus(ServiceRequestStatus.OPEN);
 
         ServiceRequest savedRequest = serviceRequestRepository.save(serviceRequest);
-
         return convertToResponse(savedRequest);
     }
 
@@ -76,11 +80,6 @@ public class ServiceRequestService {
     }
 
     public List<ServiceRequestResponse> getServiceRequestsByUser(Long userId) {
-
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
-        }
-
         return serviceRequestRepository.findByUserId(userId)
                 .stream()
                 .map(this::convertToResponse)
@@ -95,36 +94,36 @@ public class ServiceRequestService {
     }
 
     public List<ServiceRequestResponse> getOpenRequestsByCategoryAndCity(Long categoryId, String city) {
-
-        if (!categoryRepository.existsById(categoryId)) {
-            throw new ResourceNotFoundException("Category not found with id: " + categoryId);
-        }
-
-        return serviceRequestRepository
-                .findByCategoryIdAndCityIgnoreCaseAndStatus(categoryId, city, ServiceRequestStatus.OPEN)
+        return serviceRequestRepository.findByCategoryIdAndCityIgnoreCaseAndStatus(
+                        categoryId,
+                        city,
+                        ServiceRequestStatus.OPEN
+                )
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
     }
 
     private ServiceRequestResponse convertToResponse(ServiceRequest serviceRequest) {
-        return new ServiceRequestResponse(
-                serviceRequest.getId(),
-                serviceRequest.getUser().getId(),
-                serviceRequest.getUser().getName(),
-                serviceRequest.getCategory().getId(),
-                serviceRequest.getCategory().getName(),
-                serviceRequest.getTitle(),
-                serviceRequest.getDescription(),
-                serviceRequest.getAddressLine(),
-                serviceRequest.getArea(),
-                serviceRequest.getCity(),
-                serviceRequest.getPincode(),
-                serviceRequest.getLandmark(),
-                serviceRequest.getPreferredDate(),
-                serviceRequest.getPreferredTime(),
-                serviceRequest.getStatus(),
-                serviceRequest.getCreatedAt()
-        );
+        ServiceRequestResponse response = new ServiceRequestResponse();
+
+        response.setId(serviceRequest.getId());
+        response.setUserId(serviceRequest.getUser().getId());
+        response.setUserName(serviceRequest.getUser().getName());
+        response.setCategoryId(serviceRequest.getCategory().getId());
+        response.setCategoryName(serviceRequest.getCategory().getName());
+        response.setTitle(serviceRequest.getTitle());
+        response.setDescription(serviceRequest.getDescription());
+        response.setAddressLine(serviceRequest.getAddressLine());
+        response.setArea(serviceRequest.getArea());
+        response.setCity(serviceRequest.getCity());
+        response.setPincode(serviceRequest.getPincode());
+        response.setLandmark(serviceRequest.getLandmark());
+        response.setPreferredDate(serviceRequest.getPreferredDate());
+        response.setPreferredTime(serviceRequest.getPreferredTime());
+        response.setStatus(serviceRequest.getStatus());
+        response.setCreatedAt(serviceRequest.getCreatedAt());
+
+        return response;
     }
 }

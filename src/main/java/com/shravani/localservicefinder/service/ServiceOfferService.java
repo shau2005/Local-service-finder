@@ -26,10 +26,12 @@ public class ServiceOfferService {
     private final UserRepository userRepository;
     private final ProviderProfileRepository providerProfileRepository;
 
-    public ServiceOfferService(ServiceOfferRepository serviceOfferRepository,
-                               ServiceRequestRepository serviceRequestRepository,
-                               UserRepository userRepository,
-                               ProviderProfileRepository providerProfileRepository) {
+    public ServiceOfferService(
+            ServiceOfferRepository serviceOfferRepository,
+            ServiceRequestRepository serviceRequestRepository,
+            UserRepository userRepository,
+            ProviderProfileRepository providerProfileRepository) {
+
         this.serviceOfferRepository = serviceOfferRepository;
         this.serviceRequestRepository = serviceRequestRepository;
         this.userRepository = userRepository;
@@ -37,51 +39,54 @@ public class ServiceOfferService {
     }
 
     public ServiceOfferResponse createServiceOffer(ServiceOfferRequest request) {
-
         ServiceRequest serviceRequest = serviceRequestRepository.findById(request.getServiceRequestId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service request not found with id: " + request.getServiceRequestId()));
 
+        if (!serviceRequest.getCategory().isActive()) {
+            throw new RuntimeException("Cannot send offer because category is inactive: "
+                    + serviceRequest.getCategory().getName());
+        }
+
         if (serviceRequest.getStatus() != ServiceRequestStatus.OPEN) {
-            throw new IllegalArgumentException("Offer can be sent only for OPEN service requests");
+            throw new RuntimeException("Offer can be sent only for OPEN service requests");
         }
 
         User provider = userRepository.findById(request.getProviderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Provider not found with id: " + request.getProviderId()));
 
         if (provider.getRole() != UserRole.PROVIDER) {
-            throw new IllegalArgumentException("Only PROVIDER users can send offers");
+            throw new RuntimeException("Only PROVIDER can send service offer");
         }
 
         ProviderProfile providerProfile = providerProfileRepository.findByUserId(provider.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Provider profile not found for provider id: " + provider.getId()));
+                .orElseThrow(() -> new RuntimeException("Provider profile not found for provider id: " + provider.getId()));
 
-        if (!Boolean.TRUE.equals(providerProfile.getVerified())) {
-            throw new IllegalArgumentException("Only verified providers can send offers");
+        if (!providerProfile.getVerified()) {
+            throw new RuntimeException("Provider is not verified yet");
         }
 
         if (!providerProfile.getCategory().getId().equals(serviceRequest.getCategory().getId())) {
-            throw new IllegalArgumentException("Provider can send offer only for matching service category");
+            throw new RuntimeException("Provider category does not match service request category");
         }
 
         if (!providerProfile.getCity().equalsIgnoreCase(serviceRequest.getCity())) {
-            throw new IllegalArgumentException("Provider can send offer only for service requests in the same city");
+            throw new RuntimeException("Provider city does not match service request city");
         }
 
         if (serviceOfferRepository.existsByServiceRequestIdAndProviderId(
                 serviceRequest.getId(),
                 provider.getId())) {
-            throw new IllegalArgumentException("Provider has already sent an offer for this service request");
+            throw new RuntimeException("Provider has already sent an offer for this service request");
         }
 
-        ServiceOffer serviceOffer = new ServiceOffer();
-        serviceOffer.setServiceRequest(serviceRequest);
-        serviceOffer.setProvider(provider);
-        serviceOffer.setPrice(request.getPrice());
-        serviceOffer.setMessage(request.getMessage());
-        serviceOffer.setStatus(ServiceOfferStatus.PENDING);
+        ServiceOffer offer = new ServiceOffer();
+        offer.setServiceRequest(serviceRequest);
+        offer.setProvider(provider);
+        offer.setPrice(request.getPrice());
+        offer.setMessage(request.getMessage());
+        offer.setStatus(ServiceOfferStatus.PENDING);
 
-        ServiceOffer savedOffer = serviceOfferRepository.save(serviceOffer);
-
+        ServiceOffer savedOffer = serviceOfferRepository.save(offer);
         return convertToResponse(savedOffer);
     }
 
@@ -93,18 +98,13 @@ public class ServiceOfferService {
     }
 
     public ServiceOfferResponse getServiceOfferById(Long id) {
-        ServiceOffer serviceOffer = serviceOfferRepository.findById(id)
+        ServiceOffer offer = serviceOfferRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Service offer not found with id: " + id));
 
-        return convertToResponse(serviceOffer);
+        return convertToResponse(offer);
     }
 
     public List<ServiceOfferResponse> getServiceOffersByServiceRequest(Long serviceRequestId) {
-
-        if (!serviceRequestRepository.existsById(serviceRequestId)) {
-            throw new ResourceNotFoundException("Service request not found with id: " + serviceRequestId);
-        }
-
         return serviceOfferRepository.findByServiceRequestId(serviceRequestId)
                 .stream()
                 .map(this::convertToResponse)
@@ -112,28 +112,25 @@ public class ServiceOfferService {
     }
 
     public List<ServiceOfferResponse> getServiceOffersByProvider(Long providerId) {
-
-        if (!userRepository.existsById(providerId)) {
-            throw new ResourceNotFoundException("Provider not found with id: " + providerId);
-        }
-
         return serviceOfferRepository.findByProviderId(providerId)
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
     }
 
-    private ServiceOfferResponse convertToResponse(ServiceOffer serviceOffer) {
-        return new ServiceOfferResponse(
-                serviceOffer.getId(),
-                serviceOffer.getServiceRequest().getId(),
-                serviceOffer.getServiceRequest().getTitle(),
-                serviceOffer.getProvider().getId(),
-                serviceOffer.getProvider().getName(),
-                serviceOffer.getPrice(),
-                serviceOffer.getMessage(),
-                serviceOffer.getStatus(),
-                serviceOffer.getCreatedAt()
-        );
+    private ServiceOfferResponse convertToResponse(ServiceOffer offer) {
+        ServiceOfferResponse response = new ServiceOfferResponse();
+
+        response.setId(offer.getId());
+        response.setServiceRequestId(offer.getServiceRequest().getId());
+        response.setRequestTitle(offer.getServiceRequest().getTitle());
+        response.setProviderId(offer.getProvider().getId());
+        response.setProviderName(offer.getProvider().getName());
+        response.setPrice(offer.getPrice());
+        response.setMessage(offer.getMessage());
+        response.setStatus(offer.getStatus());
+        response.setCreatedAt(offer.getCreatedAt());
+
+        return response;
     }
 }

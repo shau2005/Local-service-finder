@@ -9,5 +9,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     boolean existsByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
     List<Category> findByActiveTrue();
 }
